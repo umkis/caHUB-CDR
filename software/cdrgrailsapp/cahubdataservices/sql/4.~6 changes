@@ -1,0 +1,13 @@
+select * from gtex_crf_general_medic_his
+
+alter table bpv_tissue_receipt_dissect modify blood_samples_collected null;
+
+update bpv_local_path_review set path_metastases='cM1' where path_metastases='pM1';
+
+update bpv_local_path_review set path_metastases='cM0' where path_metastases='pM0';
+
+update bpv_local_path_review set path_metastases='cM1b' where path_metastases='pM1b';
+
+update bpv_local_path_review set path_metastases='cM1a' where path_metastases='pM1a';
+
+commit;

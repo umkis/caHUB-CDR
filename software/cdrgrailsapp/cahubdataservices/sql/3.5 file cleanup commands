@@ -1,0 +1,84 @@
+select * from file_upload
+
+select * 
+  from file_upload 
+ where upper(file_upload.case_id) not in 
+       (select dr_case.case_id 
+          from dr_case)
+
+update file_upload set case_record_id = (select id from dr_case where dr_case.case_id = upper(file_upload.case_id))
+commit;
+select * from dr_case where case_id in ('GTEX-999999','GTEX-000032')
+
+select distinct bss_code from file_upload
+
+select distinct('mkdir -p /var/storage/cdrds-filestore/GTEX/'||case.case_id||'/attachments/') as mkdir_cmd 
+  from file_upload,
+       dr_case case
+  where file_upload.case_record_id = case.id
+  
+select distinct bss.code as bss_code
+  from dr_case case,
+       st_bss  bss
+ where case.bss_id = bss.id
+ 
+select 'mkdir -p /var/storage/cdrds-filestore/BPV/'||case_id||'/attachments/' as mkdir_cmd 
+  from file_upload where bss_code in ('UNM', 'VUMC')
+  
+select 'cp ' || file_path  || file_name || ' /var/storage/cdrds-filestore/GTEX/'||case.case_id||'/attachments/'||file_name as copy_cmd 
+  from file_upload ,
+       dr_case      case
+ where file_path = '/var/storage/cdrds-filestore/uploads/' and 
+       bss_code not in ('UNM','VUMC')          and
+       file_upload.case_record_id = case.id
+select * from dr_case where rownum <=5
+select 'cp ' || file_path  || file_name || ' /var/storage/cdrds-filestore/BPV/'||dr_case.case_id||'/attachments/'||file_name as copy_cmd 
+  from file_upload,
+       dr_case      case 
+ where file_path = '/var/storage/cdrds-filestore/uploads/' and bss_code in ('UNM','VUMC')
+  
+select 'cp ' || file_path || '/' || file_name || ' /var/storage/cdrds-filestore/GTEX/'||case_id||'/attachments/'||file_name as copy_cmd 
+  from file_upload 
+ where file_path != '/var/storage/cdrds-filestore/uploads/'
+
+
+/* AFTER files are copied or moved: */
+select * from file_upload where instr(file_path, 'cdrds-filestore/uploads') !=0
+
+update file_upload set file_path = '/var/storage/cdrds-filestore/GTEX/'||dr_case.case_id||'/attachments' 
+ where instr(file_path, 'cdrds-filestore/uploads/') !=0 and
+       bss_code not in ('UNM','VUMC')                   and
+       dr_case.case_id = upper(file_upload.case_id)
+
+update file_upload set file_path = '/var/storage/cdrds-filestore/GTEX/'||(select case_id from dr_case where upper(file_upload.case_id)=dr_case.case_id)||'/attachments' 
+ where instr(file_path, 'cdrds-filestore/uploads/') !=0 and
+       bss_code not in ('UNM','VUMC')                   
+
+/* missing trailing slash */
+update file_upload set file_path = '/var/storage/cdrds-filestore/GTEX/'||(select case_id from dr_case where upper(file_upload.case_id)=dr_case.case_id)||'/attachments' 
+ where instr(file_path, 'cdrds-filestore/uploads') !=0 and
+       bss_code not in ('UNM','VUMC')
+
+update file_upload set file_path = '/var/storage/cdrds-filestore/BPV/'||(select case_id from dr_case where upper(file_upload.case_id)=dr_case.case_id)||'/attachments' 
+ where instr(file_path, 'cdrds-filestore/uploads/') !=0 and
+       bss_code in ('UNM','VUMC')
+       
+select substr(file_path,1,58), file_upload.* from file_upload where instr(file_path, 'cdrds-filestore') !=0
+
+update file_upload set file_path = substr(file_path,1,58) where instr(file_path, 'cdrds-filestore') !=0
+
+/var/storage/cdrds-filestore/GTEX/GTEX-999999/attachments/
+
+select * from st_appsetting where code = 'PRC_FILE'
+
+select * from st_appsetting where value like '/var/storage%'
+
+update st_appsetting set value = '/var/storage/cdrds-filestore/PRC' where code = 'PRC_FILE'
+
+commit;
+
+select * from prc_attachment
+
+Update prc_attachment set file_path=substr(file_path, 0, 13)||'cdrds-filestore'||substr(file_path, 13);
+
+update file_upload set file_path = trim(file_path) where instr(file_path, 'cdrds-filestore') !=0

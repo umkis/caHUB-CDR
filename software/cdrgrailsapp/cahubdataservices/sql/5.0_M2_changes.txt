@@ -1,0 +1,3 @@
+alter table bpv_tissue_receipt_dissect modify blood_samples_collected null;
+
+commit;

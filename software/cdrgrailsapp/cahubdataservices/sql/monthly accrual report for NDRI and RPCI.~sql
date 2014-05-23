@@ -1,0 +1,14 @@
+select to_char(date_created,'Mon-YYYY') as name, count(*) as frequency    
+from dr_case              case,                                              
+st_study             study,
+st_bss               bss,
+st_bss               parent_bss                                        
+where case.study_id = study.id     and                                        
+study.code = 'GTEX'                and
+case.bss_id = bss.id               and
+bss.parent_bss_id = parent_bss.id  and
+(parent_bss.code = 'RPCI' or parent_bss.code = 'NDRI')
+group by to_char(date_created,'Mon-YYYY')                               
+order by to_date(to_char(date_created,'Mon-YYYY'),'Mon-YYYY')          
+
+select * from st_bss

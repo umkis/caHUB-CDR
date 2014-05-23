@@ -1,0 +1,26 @@
+ALTER TABLE dr_kit MODIFY expiration_date null;
+
+drop sequence brain_structures_pk;
+drop sequence brainbank_feedback_pk;
+drop sequence brain_damage_pk;
+
+drop table gtex_brainbank_feedback cascade constraints;
+drop table brain_structures cascade constraints;
+drop table brain_damage cascade constraints;
+
+ALTER TABLE bpv_tissue_gross_evaluation MODIFY EXCESSD null;
+ALTER TABLE bpv_tissue_gross_evaluation MODIFY EXCESSH null;
+ALTER TABLE bpv_tissue_gross_evaluation MODIFY EXCESSW null;
+ALTER TABLE bpv_tissue_gross_evaluation MODIFY NORMAL_ADJD null;
+ALTER TABLE bpv_tissue_gross_evaluation MODIFY NORMAL_ADJH null;
+ALTER TABLE bpv_tissue_gross_evaluation MODIFY NORMAL_ADJW null;
+ALTER TABLE bpv_tissue_gross_evaluation MODIFY RESECTIOND null;
+ALTER TABLE bpv_tissue_gross_evaluation MODIFY RESECTIONH null;
+ALTER TABLE bpv_tissue_gross_evaluation MODIFY RESECTIONW null;
+ALTER TABLE bpv_tissue_gross_evaluation MODIFY RESECTION_WEIGHT null;
+
+update st_activity_type set name='Shipment rcvd w/ discrep' where code='SHIPRECPTDISC';
+
+RENAME TABLE DR_SHIP_DISCREPANCY TO DR_SHIP_DISCREP;
+
+/* if needed: alter table DR_SPECIMEN_DISCREPS drop constraint FKA188DC717287F223; */

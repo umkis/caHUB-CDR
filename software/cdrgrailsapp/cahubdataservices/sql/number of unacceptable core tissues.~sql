@@ -1,0 +1,109 @@
+select tissue, count(*) 
+  from 
+(
+
+select distinct case_id, coll_type, tissue, location, inventory_status
+  from 
+  (
+select c.case_id, coll_type.name as coll_type, spec.specimen_id, tissue.name as tissue, loc.name as location, status.name as inventory_status
+  from dr_case                 c,
+       dr_specimen             spec,
+       st_acquis_type          tissue,
+       st_acquis_loc           loc,
+       st_study                study,
+       st_case_collection_type coll_type,
+       prc_specimen        pspec,
+       st_inventory_status status
+ where spec.case_record_id = c.id       and
+       c.case_collection_type_id = coll_type.id and
+       pspec.specimen_record_id  = spec.id   and
+       pspec.inventory_status_id = status.id and
+       study.code = 'GTEX'              and
+       substr(case_id, 1, 3) != 'BMS'   and
+       spec.tissue_type_id = tissue.id  and
+       spec.tissue_location_id = loc.id and
+       ( (tissue.name = 'Skin'          and loc.name like 'Leg%') OR
+        (tissue.code = 'ADIPOT')                                  OR 
+        (tissue.code = 'MUSCSK')                                  OR 
+        (tissue.code = 'NERVTB')                                  OR
+        (tissue.code = 'ARTERY')                                ) and
+       c.id in 
+       (select distinct case_record_id
+          from dr_specimen         spec,
+               st_acquis_type      tissue,
+               st_acquis_loc       loc,
+               prc_specimen        pspec,
+               st_inventory_status status
+         where spec.tissue_type_id = tissue.id       and
+               spec.tissue_location_id = loc.id      and
+               pspec.specimen_record_id  = spec.id   and
+               pspec.inventory_status_id = status.id and
+               substr(specimen_id, 1, 3) != 'BMS'    and
+               tissue.name = 'Skin'                  and
+               loc.name like 'Leg%'                  and
+               status.code = 'UNACC'
+
+        UNION
+        select distinct case_record_id
+          from dr_specimen         spec,
+               st_acquis_type      tissue,
+               st_acquis_loc       loc,
+               prc_specimen        pspec,
+               st_inventory_status status
+         where spec.tissue_type_id = tissue.id       and
+               spec.tissue_location_id = loc.id      and
+               pspec.specimen_record_id  = spec.id   and
+               pspec.inventory_status_id = status.id and
+               substr(specimen_id, 1, 3) != 'BMS'    and
+               tissue.CODE  = 'ADIPOT'               and
+               status.code = 'UNACC'
+         UNION 
+        select distinct case_record_id
+          from dr_specimen         spec,
+               st_acquis_type      tissue,
+               st_acquis_loc       loc,
+               prc_specimen        pspec,
+               st_inventory_status status
+         where spec.tissue_type_id = tissue.id       and
+               spec.tissue_location_id = loc.id      and
+               pspec.specimen_record_id  = spec.id   and
+               pspec.inventory_status_id = status.id and
+               substr(specimen_id, 1, 3) != 'BMS'    and
+               tissue.CODE  = 'MUSCSK'               and
+               status.code = 'UNACC'
+        UNION
+        select distinct case_record_id
+          from dr_specimen         spec,
+               st_acquis_type      tissue,
+               st_acquis_loc       loc,
+               prc_specimen        pspec,
+               st_inventory_status status
+         where spec.tissue_type_id = tissue.id       and
+               spec.tissue_location_id = loc.id      and
+               pspec.specimen_record_id  = spec.id   and
+               pspec.inventory_status_id = status.id and
+               substr(specimen_id, 1, 3) != 'BMS'    and
+               tissue.CODE  = 'NERVTB'               and
+               status.code = 'UNACC'
+        UNION
+        select distinct case_record_id
+          from dr_specimen         spec,
+               st_acquis_type      tissue,
+               st_acquis_loc       loc,
+               prc_specimen        pspec,
+               st_inventory_status status
+         where spec.tissue_type_id = tissue.id       and
+               spec.tissue_location_id = loc.id      and
+               pspec.specimen_record_id  = spec.id   and
+               pspec.inventory_status_id = status.id and
+               substr(specimen_id, 1, 3) != 'BMS'    and
+               tissue.CODE  = 'ARTERY'               and
+               status.code = 'UNACC'
+               )
+order by case_id, specimen_id
+  )
+order by case_id
+  )
+group by tissue
+order by tissue
+/* select * from st_acquis_type */

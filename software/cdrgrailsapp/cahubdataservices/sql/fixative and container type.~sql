@@ -1,0 +1,48 @@
+select study.code as study_id, case_id, specimen_id, type.code as tissue_type, fix.code as fixative, cont.code as container_type, proto.code as protocol, 
+       spec.was_consumed
+  from dr_specimen   spec,
+       dr_case       case,
+       st_container  cont,
+       st_fixative   fix,
+       st_study      study,
+       st_protocol   proto,
+       st_acquis_type type
+ where spec.case_record_id = case.id    and
+       case.study_id = study.id         and
+       spec.container_type_id = cont.id(+) and
+       spec.protocol_id = proto.id(+)      and
+       spec.fixative_id = fix.id(+)        and
+       spec.tissue_type_id = type.id       and
+       study.code = 'GTEX'                  and
+       fix.code is null and cont.code is null and proto.code is null
+       
+select * from st_container
+
+select * from st_fixative
+
+select distinct study.code as study_id, fix.code as fix_code, fix.name as fix_name, cont.code as container_type, proto.code as protocol, 
+       spec.was_consumed
+  from dr_specimen   spec,
+       dr_case       case,
+       st_container  cont,
+       st_fixative   fix,
+       st_study      study,
+       st_protocol   proto,
+       st_acquis_type type
+ where spec.case_record_id = case.id    and
+       case.study_id = study.id         and
+       spec.container_type_id = cont.id(+) and
+       spec.protocol_id = proto.id(+)      and
+       spec.fixative_id = fix.id(+)        and
+       spec.tissue_type_id = type.id
+ order by study.code
+
+select fix.code, slide.* 
+  from dr_slide    slide,
+       dr_specimen spec,
+       st_fixative fix
+ where slide.specimen_record_id = spec.id and
+       spec.fixative_id = fix.id
+       
+select * from st_acquis_loc
+ 

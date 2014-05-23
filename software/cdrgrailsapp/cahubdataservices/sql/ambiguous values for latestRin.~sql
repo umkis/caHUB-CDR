@@ -1,0 +1,18 @@
+select case_id, subq.specimen_id, latest_rin, lq.date_run, lr.attribute, lr.value
+  from
+  (
+  select case_id, spec.specimen_id, latestRin(spec.specimen_id) as latest_rin
+    from dr_specimen     spec,
+         dr_case         c,
+         st_study        study
+   where c.study_id = study.id       and
+         spec.case_record_id = c.id  and
+         latestRin(spec.specimen_id) = '*****' 
+   ) subq,
+   ldacc_specimen  lspec,
+   ldacc_qc        lq,
+   ldacc_qc_result lr    
+ where subq.specimen_id = lspec.private_id and
+       lq.specimen_id = lspec.id           and
+       lr.qc_id = lq.id
+ order by subq.specimen_id, date_run

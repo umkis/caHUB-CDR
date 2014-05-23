@@ -1,0 +1,38 @@
+-- select id, version, bmi, abnormalwbc, active_encephalitis, active_meningitis, age, allowed_min_organ_type, alzheimers, ascities, bite_from_animal, 
+-- blood_don_denial_reason, blood_transfusion, cancer_diag_prec5yrs, candidate_record_id, cellulites, cocaine_use, collect_in24h_death, contacthiv, 
+-- contact_with_smallpox, creutzfeldt_jakob, current_cancer_diag, date_created, dementia, diag_of_sars, diagnosed_metastatis, dialysis_treatment, 
+-- documented_sepsis, drug_abuse, drug_use_for_non_med, drugs_for_non_med5yrs, end_comments, exposure_to_toxics, fungal_infections, gonorrhea_treat, 
+-- growth_harmone, heart_dis, hemophilia, hemophilia_treat, hepatitisb, hepatitisc, heroin_use, high_unexplained_fever, hist_of_auto_imm_dis, 
+-- hist_of_infections, hist_of_reactive_assays, hist_of_sex_withhiv, hist_of_west_nile, hist_ofphysic_contact, hiv, hum_anim_tissue_transplant, 
+-- infected_lines, internal_comments, internalguid, intraven_drug_abuse, last_updated, lateral_sclero, longterm_steroid_use, med_history, 
+-- men_sex_with_men, men_with_men, multi_sclero, night_sweats, no_physical_activity, non_prof_tattoos, non_profpiercing, not_tested_for_hiv, 
+-- open_wounds, opp_infections, osteomyelitis, past_blood_donations, pneumonia, positive_blood_cultures, presc_drug_abuse, public_comments, 
+-- public_version, receive_transfusion_in48h, received_chemo_in2y, recent_smallpox_vac, resided_on_milit_base, reyes_synd, rheum_arthritis, 
+-- sarcoidosis, scleroderma, sex_for_drugs_or_money, sex_for_money_drugs, sex_tans_dis, sex_with_others, signs_of_drug_abuse, spots_on_skin, 
+-- state_run_home, syphilis_treat, syst_lupus, tbhistory, tatttoos, time_in_det_center, time_in_europe, time_in_uk, tissue_transplant_comments, 
+-- unexpl_cough, unexpl_lymphad, unexpl_seizures, unexpl_temp, unexpl_weightt_loss, unexpl_wkness, unexpl_wt_loss, west_nile_contact, collect_all_in24after_death, collect_in8after_death from
+select c.case_id, elig.hum_anim_tissue_transplant, elig.tissue_transplant_comments
+  from cdrds.gtex_donor_eligibility elig,
+       cdrds.dr_case                c,
+       cdrds.dr_candidate           cand
+ where elig.candidate_record_id = cand.id and
+       cand.case_record_id = c.id         and
+       hum_anim_tissue_transplant = 'Yes' and
+       c.id in 
+       (select distinct persisted_object_id 
+          from cdrds.audit_log 
+         where class_name like '%CaseRecord%'       and
+               new_value = 'BSS QA Review Complete' and 
+               persisted_object_id in 
+               (select id 
+                  from cdrds.dr_case c 
+                 where c.phase_id =
+                       (select id 
+                          from cdrds.st_studyphase p
+                         where p.code = 'SU1') 
+               ) and 
+               date_created < to_date('01-Mar-2014', 'DD-Mon-YYYY')
+       )
+ order by case_id
+
+

@@ -1,0 +1,214 @@
+--case list , Anita's rule
+select distinct bss.code as bss, coll_type.name as coll_type, case_id, specdw.min_fix_time, specdw.max_fix_time
+  from cdrds.dr_case                 c,
+       cdrds.dw_specimen             specdw,
+       cdrds.st_bss                  bss,
+       cdrds.st_acquis_type          tissue,
+       cdrds.st_case_collection_type coll_type
+ where c.id in 
+       (select distinct persisted_object_id 
+          from cdrds.audit_log 
+         where class_name like '%CaseRecord%'       and
+               new_value = 'BSS QA Review Complete' and 
+               persisted_object_id in 
+               (select id 
+                  from cdrds.dr_case c 
+                 where c.phase_id =
+                       (select id 
+                          from cdrds.st_studyphase p
+                         where p.code = 'SU1') 
+               ) and 
+               date_created < to_date('01-Mar-2014', 'DD-Mon-YYYY')
+       ) and
+       specdw.case_record_id(+) = c.id           and
+       c.case_collection_type_id = coll_type.id  and
+       c.bss_id = bss.id                         and
+       specdw.tissue_type_id = tissue.id
+ order by case_id
+
+-- how many RINs do we have?
+select c.case_id, spec.specimen_id, tissue.name as tissue, latestRin(spec.specimen_id) as latest_rin
+  from cdrds.dr_specimen    spec,
+       cdrds.dr_case        c,
+       cdrds.st_acquis_type tissue
+ where c.id in 
+       (select distinct persisted_object_id 
+          from cdrds.audit_log 
+         where class_name like '%CaseRecord%'       and
+               new_value = 'BSS QA Review Complete' and 
+               persisted_object_id in 
+               (select id 
+                  from cdrds.dr_case c 
+                 where c.phase_id =
+                       (select id 
+                          from cdrds.st_studyphase p
+                         where p.code = 'SU1') 
+               ) and 
+               date_created < to_date('01-Mar-2014', 'DD-Mon-YYYY')
+       ) and
+       spec.tissue_type_id = tissue.id and
+       spec.case_record_id = c.id      and
+       latestRin(spec.specimen_id) is not null and
+       case_id in ('GTEX-000224','GTEX-000319','GTEX-000322','GTEX-000323','GTEX-000325','GTEX-000326','GTEX-000330',
+'GTEX-000332','GTEX-000337','GTEX-000338','GTEX-000342','GTEX-000343','GTEX-000344','GTEX-000345',
+'GTEX-000346','GTEX-000347','GTEX-000350','GTEX-000352','GTEX-000355','GTEX-000356',
+'GTEX-000357','GTEX-000364','GTEX-000365','GTEX-000368','GTEX-000369','GTEX-000370','GTEX-000371',
+'GTEX-000373','GTEX-000374','GTEX-000375','GTEX-000424','GTEX-000446','GTEX-000447','GTEX-000462')
+ order by specimen_id
+
+-- how many RINs do we have?
+select c.case_id, count(*)
+  from cdrds.dr_specimen    spec,
+       cdrds.dr_case        c,
+       cdrds.st_acquis_type tissue
+ where c.id in 
+       (select distinct persisted_object_id 
+          from cdrds.audit_log 
+         where class_name like '%CaseRecord%'       and
+               new_value = 'BSS QA Review Complete' and 
+               persisted_object_id in 
+               (select id 
+                  from cdrds.dr_case c 
+                 where c.phase_id =
+                       (select id 
+                          from cdrds.st_studyphase p
+                         where p.code = 'SU1') 
+               ) and 
+               date_created < to_date('01-Mar-2014', 'DD-Mon-YYYY')
+       ) and
+       spec.tissue_type_id = tissue.id and
+       spec.case_record_id = c.id      and
+       latestRin(spec.specimen_id) is not null
+having count(*) > 2
+ group by case_id
+ order by case_id
+ 
+select * from ALL_tab_columns where column_name like '%LYSIS%'
+
+-- provide output for SAS proc Corr
+select parent_bss.name as parent_bss, casedw.brain, spec.specimen_id, tissue.name as tissue, specdw.ischemic_time as ischemic_time, latestRin(substr(spec.Specimen_ID,1,14)||'26') as latestRin, autolysis as autolysis
+  from cdrds.dr_case                 c,
+       cdrds.dr_SPECIMEN             spec,
+       cdrds.PRC_SPECIMEN            pspec,
+       cdrds.dw_specimen             specdw,
+       cdrds.dw_case                 casedw,
+       cdrds.st_acquis_type          tissue,
+       cdrds.st_bss                  bss,
+       cdrds.st_bss                  parent_bss,
+       cdrds.st_case_collection_type coll_type
+ where pspec.specimen_record_id = spec.id       and
+       spec.case_record_id = c.id               and
+       spec.tissue_type_id = tissue.id          and
+       c.bss_id = bss.id                        and
+       c.case_collection_type_id = coll_type.id and
+       specdw.case_dw_id = casedw.id            and
+       bss.parent_bss_id = parent_bss.id        and
+       c.id in 
+       (select distinct persisted_object_id 
+          from cdrds.audit_log 
+         where class_name like '%CaseRecord%'       and
+               new_value = 'BSS QA Review Complete' and 
+               persisted_object_id in 
+               (select id 
+                  from cdrds.dr_case c 
+                 where c.phase_id =
+                       (select id 
+                          from cdrds.st_studyphase p
+                         where p.code = 'SU1') 
+               ) and 
+               date_created < to_date('01-Mar-2014', 'DD-Mon-YYYY')
+       ) and latestRin(substr(spec.Specimen_ID,1,14)||'26') != 99999 and
+       specdw.specimen_id = spec.specimen_id
+ order by parent_bss.name, casedw.brain, spec.specimen_id
+
+select * from cdrds.st_bss
+
+select tissue, count(*)
+  from
+(select distinct substr(spec.Specimen_ID,1,14) as tissue_id, tissue.name as tissue
+  from dr_specimen    spec,
+       dr_case        c,
+       st_acquis_type tissue,
+       st_fixative    fix
+ where spec.case_record_id = c.id      and
+       spec.tissue_type_id = tissue.id and
+       spec.fixative_id = fix.id       and
+       fix.code = 'XG' and tissue.code != 'BLOODW' and
+       c.id in 
+       (select distinct persisted_object_id 
+          from cdrds.audit_log 
+         where class_name like '%CaseRecord%'       and
+               new_value = 'BSS QA Review Complete' and 
+               persisted_object_id in 
+               (select id 
+                  from cdrds.dr_case c 
+                 where c.phase_id =
+                       (select id 
+                          from cdrds.st_studyphase p
+                         where p.code = 'SU1') 
+               ) and 
+               date_created < to_date('01-Mar-2014', 'DD-Mon-YYYY')
+       )
+ )
+ group by tissue
+ 
+ 
+select case
+        when case_id in 
+             (select case_id
+                from dr_case        c,
+                     dr_specimen    spec,
+                     st_acquis_type tissue
+               where spec.case_record_id = c.id and
+                     spec.tissue_type_id = tissue.id and
+                     tissue.code = 'BRAIN'
+             ) then 'BRAIN'
+        when case_id not in 
+             (select case_id
+                from dr_case        c,
+                     dr_specimen    spec,
+                     st_acquis_type tissue
+               where spec.case_record_id = c.id and
+                     spec.tissue_type_id = tissue.id and
+                     tissue.code = 'BRAIN'
+             ) then 'non-BRAIN'
+        else 'ERROR'
+        end as Brain_non_brain,
+        count(*) as frequency
+  from dr_case         c
+ where c.id in 
+       (select distinct persisted_object_id 
+          from cdrds.audit_log 
+         where class_name like '%CaseRecord%'       and
+               new_value = 'BSS QA Review Complete' and 
+               persisted_object_id in 
+               (select id 
+                  from cdrds.dr_case c 
+                 where c.phase_id =
+                       (select id 
+                          from cdrds.st_studyphase p
+                         where p.code = 'SU1') 
+               ) and 
+               date_created < to_date('01-Mar-2014', 'DD-Mon-YYYY')
+       )
+ group by case
+          when case_id in 
+             (select case_id
+                from dr_case        c,
+                     dr_specimen    spec,
+                     st_acquis_type tissue
+               where spec.case_record_id = c.id and
+                     spec.tissue_type_id = tissue.id and
+                     tissue.code = 'BRAIN'
+             ) then 'BRAIN'
+        when case_id not in 
+             (select case_id
+                from dr_case        c,
+                     dr_specimen    spec,
+                     st_acquis_type tissue
+               where spec.case_record_id = c.id and
+                     spec.tissue_type_id = tissue.id and
+                     tissue.code = 'BRAIN'
+             ) then 'non-BRAIN'
+        else 'ERROR'
+        end
